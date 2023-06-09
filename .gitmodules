@@ -1,0 +1,9 @@
+[submodule "vendor/cmsis5"]
+	path = vendor/cmsis5
+	url = https://github.com/ARM-software/CMSIS_5.git
+[submodule "vendor/cmsisf4"]
+	path = vendor/cmsisf4
+	url = https://github.com/STMicroelectronics/cmsis_device_f4.git
+[submodule "vendor/free-rtos"]
+	path = vendor/free-rtos
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
