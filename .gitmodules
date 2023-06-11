@@ -7,3 +7,6 @@
 [submodule "vendor/free-rtos"]
 	path = vendor/free-rtos
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "vendor/tinyusb"]
+	path = vendor/tinyusb
+	url = https://github.com/hathach/tinyusb.git

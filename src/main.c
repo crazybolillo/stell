@@ -1,14 +1,13 @@
-#include <stm32f4xx.h>
-#include <core_cm4.h>
 #include <FreeRTOS.h>
+#include <stm32f4xx.h>
 #include <task.h>
 
-#include "FreeRTOSConfig.h"
-
+StackType_t blinkLedStack[configMINIMAL_STACK_SIZE];
+StaticTask_t blinkLedTaskHandle;
 
 void prvSetupHardware(void) {
     SystemInit();
-    SysTick_Config(SystemCoreClock/1000);
+    SysTick_Config(SystemCoreClock / 1000);
     NVIC_SetPriorityGrouping(__NVIC_PRIO_BITS);
 
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
@@ -18,32 +17,42 @@ void prvSetupHardware(void) {
 void blinkLedTask(void *pvParameters) {
     while (1) {
         GPIOC->ODR = 0xFFFFFFFF;
-        vTaskDelay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
         GPIOC->ODR = 0;
-        vTaskDelay(1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
-void vApplicationMallocFailedHook(void){GPIOC->ODR = 0xFFFFFFFF;}
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char * pcTaskName) {}
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {}
+void vApplicationGetIdleTaskMemory(
+    StaticTask_t **ppxIdleTaskTCBBuffer,
+    StackType_t **ppxIdleTaskStackBuffer,
+    uint32_t *pulIdleTaskStackSize
+) {
+    static StaticTask_t idleTaskHandle;
+    static StackType_t idleStack[configMINIMAL_STACK_SIZE];
+
+    *ppxIdleTaskTCBBuffer = &idleTaskHandle;
+    *ppxIdleTaskStackBuffer = idleStack;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
 void vApplicationTickHook(void) {}
-void xTimerCreateTimerTask(void) {}
 void vApplicationIdleHook(void) {}
 
 void main(void) {
     prvSetupHardware();
 
-    TaskHandle_t blinkLedTaskH = NULL;
-    xTaskCreate(
+    xTaskCreateStatic(
         blinkLedTask,
         "BlinkLED",
-        512,
+        configMINIMAL_STACK_SIZE,
         NULL,
         tskIDLE_PRIORITY,
-        &blinkLedTaskH
+        blinkLedStack,
+        &blinkLedTaskHandle
     );
 
     vTaskStartScheduler();
 
-    while (1);
+    while (1) continue;
 }

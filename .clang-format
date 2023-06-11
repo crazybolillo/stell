@@ -1,0 +1,9 @@
+Language: Cpp
+BasedOnStyle: Google
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveBitFields: Consecutive
+AllowShortLoopsOnASingleLine: true
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 100
+IndentWidth: 4
