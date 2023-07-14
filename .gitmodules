@@ -10,3 +10,6 @@
 [submodule "vendor/tinyusb"]
 	path = vendor/tinyusb
 	url = https://github.com/hathach/tinyusb.git
+[submodule "subprojects/gtest"]
+	path = subprojects/gtest
+	url = https://github.com/google/googletest.git

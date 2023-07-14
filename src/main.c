@@ -1,7 +1,8 @@
 #include <FreeRTOS.h>
 #include <stm32f4xx.h>
 #include <task.h>
-#include <tusb.h>
+
+#include "usb.h"
 
 #define TINY_USB_TASK_STACK_SIZE 180
 
@@ -38,41 +39,35 @@ void prvSetupHardware(void) {
     GPIOC->MODER = 0x01 << GPIO_MODER_MODER13_Pos;
 
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-    GPIOA->MODER |=
-        (0x02 << GPIO_MODER_MODE8_Pos | (0x02 << GPIO_MODER_MODER11_Pos) |
-         (0x02 << GPIO_MODER_MODER12_Pos));
-    GPIOA->OSPEEDR |= (0x02 << GPIO_OSPEEDR_OSPEED11_Pos) | (0x02 << GPIO_OSPEEDR_OSPEED12_Pos);
-    GPIOA->AFR[1] |= (0x0A << GPIO_AFRH_AFSEL11_Pos) | (0x0A << GPIO_AFRH_AFSEL12_Pos);
+    GPIOA->MODER |= (0x02 << GPIO_MODER_MODE8_Pos);
 
-    RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
-    while ((USB_OTG_FS->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0) continue;
+    usbdevInit();
+    usbdevStart();
 
-    NVIC_SetPriority(OTG_FS_IRQn, configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY);
-    USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSBSEN;
-    USB_OTG_FS->GCCFG &= ~USB_OTG_GCCFG_VBUSASEN;
-
-    tusb_init();
+    NVIC_SetPriority(OTG_FS_IRQn, 4);
+    NVIC_EnableIRQ(OTG_FS_IRQn);
 }
 
-void OTG_FS_IRQHandler(void) { tud_int_handler(0); }
+// void OTG_FS_IRQHandler(void) { tud_int_handler(0); }
 
 void blinkLedTask(void *pvParameters) {
     (void)pvParameters;
     while (1) {
-        GPIOC->ODR = 0xFFFFFFFF;
+        GPIOC->ODR |= 0x01 << 13;
         vTaskDelay(pdMS_TO_TICKS(1950));
-        GPIOC->ODR = 0;
+        GPIOC->ODR &= ~(0x01 << 13);
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
-void tinyUsbTask(void *pvParameters) {
-    while (1) {
-        (void)pvParameters;
-        tud_task();
-    }
-}
+// void tinyUsbTask(void *pvParameters) {
+//     while (1) {
+//         (void)pvParameters;
+//         tud_task();
+//     }
+// }
+
+void OTG_FS_IRQHandler(void) { usbdevProcess(); }
 
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName) {}
 void vApplicationGetIdleTaskMemory(
@@ -104,16 +99,27 @@ int main(void) {
     );
     configASSERT(&blinkLedTaskHandle);
 
-    xTaskCreateStatic(
-        tinyUsbTask,
-        "TinyUSB",
-        TINY_USB_TASK_STACK_SIZE,
-        NULL,
-        tskIDLE_PRIORITY + 1,
-        tinyUsbTaskStack,
-        &tinyUsbTaskHandle
-    );
-    configASSERT(&tinyUsbTaskHandle);
+    //    xTaskCreateStatic(
+    //        tinyUsbTask,
+    //        "TinyUSB",
+    //        TINY_USB_TASK_STACK_SIZE,
+    //        NULL,
+    //        tskIDLE_PRIORITY + 1,
+    //        tinyUsbTaskStack,
+    //        &tinyUsbTaskHandle
+    //    );
+    //    configASSERT(&tinyUsbTaskHandle);
+
+    //    usbSemaphoreHandle = xSemaphoreCreateBinaryStatic(&usbSemaphore);
+    //    xTaskCreateStatic(
+    //        usbTask,
+    //        "USB",
+    //        USB_TASK_STACK_SIZE,
+    //        NULL,
+    //        tskIDLE_PRIORITY + 1,
+    //        usbTaskStack,
+    //        &usbTaskHandle
+    //    );
 
     vTaskStartScheduler();
     while (1) continue;
